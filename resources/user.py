@@ -36,7 +36,7 @@ class User(Resource):
         if not user:
             return {'message': 'User not found'}, 404
         
-        return user.json()
+        return user.json(), 200
 
     @classmethod
     def delete(cls, user_id):
