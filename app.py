@@ -23,13 +23,20 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 app.secret_key = 'heetae' # app.config['JWT_SECRET_KEY']
 api = Api(app)
 
-
 # Creates table
 @app.before_first_request
 def create_tables():
     db.create_all()
 
 jwt = JWTManager(app)
+
+@jwt.additional_claims_loader
+def add_claims_to_jwt(identity):
+    # instead of hardcoding, should be read from a config file or db
+    if identity == 1:
+        return {'is_admin': True}
+    return {'is_admin': False}
+
 
 api.add_resource(Store, '/store/<string:name>')
 api.add_resource(Item, '/item/<string:name>')
