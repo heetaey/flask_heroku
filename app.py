@@ -1,13 +1,14 @@
 # import os
 # import re
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 
 from resources.user import UserRegister, User, UserLogin, TokenRefresh
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
+from blacklists import BLACKLIST
 from db import db
 
 
@@ -20,6 +21,8 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 app.secret_key = 'heetae' # app.config['JWT_SECRET_KEY']
 api = Api(app)
 
@@ -38,14 +41,16 @@ def add_claims_to_jwt(identity):
         return {'is_admin': True}
     return {'is_admin': False}
 
-
 @jwt.expired_token_loader
-def expired_token_callback():
+def expired_token_callback(_decrypted_header, _decrypted_body):
     return jsonify({
         'description': 'The token has expired.',
         'error': 'token_expired'
     }), 401
 
+@jwt.token_in_blocklist_loader
+def check_token_blocklisted(_decrypted_header, _decrypted_body):
+    return _decrypted_body['sub'] in BLACKLIST
 
 @jwt.invalid_token_loader
 def invalid_token_callback(error):
@@ -54,7 +59,6 @@ def invalid_token_callback(error):
         'error': 'invalid_token'
     }), 401
 
-
 @jwt.unauthorized_loader
 def missing_token_callback(error):
     return jsonify({
@@ -62,17 +66,15 @@ def missing_token_callback(error):
         'error': 'authorization_required'
     }), 401
 
-
 @jwt.needs_fresh_token_loader
-def token_not_fresh_callback(error):
+def token_not_fresh_callback(_decrypted_header, _decrypted_body):
     return jsonify({
         'description': 'The token is not fresh.',
         'error': 'fresh_token_required'
     }), 401
 
-
 @jwt.revoked_token_loader
-def revoked_token_callback(error):
+def revoked_token_callback(_decrypted_header, _decrypted_body):
     return jsonify({
         'description': 'The token has been revoked.',
         'error': 'token_revoked'
