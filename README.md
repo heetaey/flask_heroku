@@ -22,6 +22,9 @@ Production-ready REST APIs with Flask
 - Flask-SQLAlchemy
 - Werkzeug
 
-## Authors
+## Possible Implementations/Improvements
+* Pushing the app on to the AWS
+* Implement UI for the application for better accessibility
 
+## Authors
 Heetae Yang
